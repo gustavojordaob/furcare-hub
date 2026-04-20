@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "FurCare Hub",
+    "slug": "furcare-hub",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "furcarehub",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#000000",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.furcare.hub"
+    },
+    "android": {
+      "package": "com.furcare.hub",
+      "backgroundColor": "#000000"
+    },
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
