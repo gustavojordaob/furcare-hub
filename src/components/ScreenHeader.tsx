@@ -6,7 +6,9 @@ import { COLORS } from "../constants/theme";
 export function ScreenHeader(props: {
   title: string;
   subtitle?: string;
-  onLogout?: () => void;
+  onLogout?: () => void | Promise<void>;
+  onAdd?: () => void;
+  addAccessibilityLabel?: string;
 }) {
   return (
     <View style={tw`px-4 pt-12 pb-4`}>
@@ -19,16 +21,28 @@ export function ScreenHeader(props: {
             </Text>
           ) : null}
         </View>
-        {props.onLogout ? (
-          <TouchableOpacity
-            onPress={props.onLogout}
-            style={tw`p-2 rounded-full bg-zinc-800`}
-            accessibilityRole="button"
-            accessibilityLabel="Sair"
-          >
-            <Ionicons name="log-out-outline" size={22} color={COLORS.text} />
-          </TouchableOpacity>
-        ) : null}
+        <View style={tw`flex-row items-center`}>
+          {props.onAdd ? (
+            <TouchableOpacity
+              onPress={props.onAdd}
+              style={tw`p-2 rounded-full bg-zinc-800 mr-2`}
+              accessibilityRole="button"
+              accessibilityLabel={props.addAccessibilityLabel ?? "Adicionar"}
+            >
+              <Ionicons name="add" size={26} color={COLORS.primary} />
+            </TouchableOpacity>
+          ) : null}
+          {props.onLogout ? (
+            <TouchableOpacity
+              onPress={() => void props.onLogout?.()}
+              style={tw`p-2 rounded-full bg-zinc-800`}
+              accessibilityRole="button"
+              accessibilityLabel="Sair"
+            >
+              <Ionicons name="log-out-outline" size={22} color={COLORS.text} />
+            </TouchableOpacity>
+          ) : null}
+        </View>
       </View>
     </View>
   );
