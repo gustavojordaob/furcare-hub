@@ -14,7 +14,11 @@ import {
   createUserWithEmailAndPassword,
 } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { getFirebaseAuth, getFirestoreDb } from "../lib/firebaseConfig";
+import {
+  getFirebaseAuth,
+  getFirestoreDb,
+  logFirebaseAuthError,
+} from "../lib/firebaseConfig";
 
 const DEMO_EMAIL = "demo@furcare.local";
 const DEMO_PASSWORD = "furcare123";
@@ -44,24 +48,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    const auth = getFirebaseAuth();
-    await signInWithEmailAndPassword(auth, email.trim(), password);
+    try {
+      const auth = getFirebaseAuth();
+      await signInWithEmailAndPassword(auth, email.trim(), password);
+    } catch (e) {
+      logFirebaseAuthError("signInWithEmailAndPassword", e);
+      throw e;
+    }
   }, []);
 
   const register = useCallback(
     async (nome: string, email: string, password: string) => {
       const auth = getFirebaseAuth();
       const db = getFirestoreDb();
-      const cred = await createUserWithEmailAndPassword(
-        auth,
-        email.trim(),
-        password
-      );
-      await setDoc(doc(db, "usuarios", cred.user.uid), {
-        nome,
-        email: email.trim(),
-        criadoEm: serverTimestamp(),
-      });
+
+      let cred;
+      try {
+        cred = await createUserWithEmailAndPassword(
+          auth,
+          email.trim(),
+          password
+        );
+      } catch (e) {
+        logFirebaseAuthError("register/createUserWithEmailAndPassword", e);
+        throw e;
+      }
+
+      try {
+        // Garante token no cliente antes do Firestore (evita corrida em RN).
+        await cred.user.getIdToken(true);
+        await setDoc(doc(db, "usuarios", cred.user.uid), {
+          nome,
+          email: email.trim(),
+          criadoEm: serverTimestamp(),
+        });
+      } catch (e) {
+        logFirebaseAuthError(
+          "register/setDoc usuarios (Firestore — veja firestore.rules e deploy)",
+          e
+        );
+        throw e;
+      }
     },
     []
   );
@@ -85,8 +112,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: DEMO_EMAIL,
         criadoEm: serverTimestamp(),
       });
-    } catch {
-      await signInWithEmailAndPassword(auth, DEMO_EMAIL, DEMO_PASSWORD);
+    } catch (e) {
+      const code = (e as { code?: string })?.code;
+      if (code !== "auth/email-already-in-use") {
+        logFirebaseAuthError(
+          "ensureDemoUser/createUserWithEmailAndPassword",
+          e
+        );
+      }
+      try {
+        await signInWithEmailAndPassword(auth, DEMO_EMAIL, DEMO_PASSWORD);
+      } catch (signInErr) {
+        logFirebaseAuthError(
+          "ensureDemoUser/signInWithEmailAndPassword",
+          signInErr
+        );
+        throw signInErr;
+      }
     }
   }, []);
 

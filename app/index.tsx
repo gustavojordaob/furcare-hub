@@ -9,7 +9,12 @@ export default function Index() {
 
   if (loading) {
     return (
-      <View style={tw`flex-1 items-center justify-center`}>
+      <View
+        style={[
+          tw`flex-1 items-center justify-center`,
+          { backgroundColor: COLORS.background },
+        ]}
+      >
         <ActivityIndicator color={COLORS.primary} size="large" />
       </View>
     );

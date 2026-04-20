@@ -1,10 +1,21 @@
-import { ScrollView, Text, View } from "react-native";
+import { useState } from "react";
+import { ScrollView, Text, TextInput, View } from "react-native";
 import tw from "twrnc";
+import { AddItemModal } from "../../src/components/AddItemModal";
 import { ScreenHeader } from "../../src/components/ScreenHeader";
 import { useAuth } from "../../src/context/AuthContext";
 import { COLORS } from "../../src/constants/theme";
 
-const MOCK_PETS = [
+type Pet = {
+  id: string;
+  nome: string;
+  especie: string;
+  raca: string;
+  dono: string;
+  telefone: string;
+};
+
+const INITIAL: Pet[] = [
   {
     id: "p1",
     nome: "Thor",
@@ -25,21 +36,61 @@ const MOCK_PETS = [
 
 export default function PetsTab() {
   const { signOutUser } = useAuth();
+  const [pets, setPets] = useState<Pet[]>(INITIAL);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [nome, setNome] = useState("");
+  const [especie, setEspecie] = useState("");
+  const [raca, setRaca] = useState("");
+  const [dono, setDono] = useState("");
+  const [telefone, setTelefone] = useState("");
+
+  const inputStyle = tw`rounded-xl px-4 py-3 text-white border border-zinc-700 mb-3`;
+
+  function resetForm() {
+    setNome("");
+    setEspecie("");
+    setRaca("");
+    setDono("");
+    setTelefone("");
+  }
+
+  function onSalvar() {
+    if (!nome.trim() || !dono.trim()) return;
+    setPets((prev) => [
+      {
+        id: `p-${Date.now()}`,
+        nome: nome.trim(),
+        especie: especie.trim() || "—",
+        raca: raca.trim() || "—",
+        dono: dono.trim(),
+        telefone: telefone.trim() || "—",
+      },
+      ...prev,
+    ]);
+    resetForm();
+    setModalOpen(false);
+  }
 
   return (
-    <View style={tw`flex-1`}>
+    <View style={[tw`flex-1`, { backgroundColor: COLORS.background }]}>
       <ScreenHeader
         title="Pets"
         subtitle="Cada pet possui um dono cadastrado"
+        onAdd={() => setModalOpen(true)}
+        addAccessibilityLabel="Adicionar pet"
         onLogout={signOutUser}
       />
       <ScrollView contentContainerStyle={tw`px-4 pb-10`}>
-        {MOCK_PETS.map((p) => (
+        {pets.map((p) => (
           <View
             key={p.id}
             style={[
               tw`rounded-2xl p-4 mb-3`,
-              { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border },
+              {
+                backgroundColor: COLORS.surface,
+                borderWidth: 1,
+                borderColor: COLORS.border,
+              },
             ]}
           >
             <Text style={tw`text-white text-lg font-semibold`}>{p.nome}</Text>
@@ -55,6 +106,54 @@ export default function PetsTab() {
           </View>
         ))}
       </ScrollView>
+
+      <AddItemModal
+        visible={modalOpen}
+        title="Novo pet"
+        onClose={() => {
+          resetForm();
+          setModalOpen(false);
+        }}
+        onSubmit={onSalvar}
+        submitDisabled={!nome.trim() || !dono.trim()}
+      >
+        <TextInput
+          placeholder="Nome do pet"
+          placeholderTextColor={COLORS.textMuted}
+          style={inputStyle}
+          value={nome}
+          onChangeText={setNome}
+        />
+        <TextInput
+          placeholder="Espécie (ex.: Cão)"
+          placeholderTextColor={COLORS.textMuted}
+          style={inputStyle}
+          value={especie}
+          onChangeText={setEspecie}
+        />
+        <TextInput
+          placeholder="Raça"
+          placeholderTextColor={COLORS.textMuted}
+          style={inputStyle}
+          value={raca}
+          onChangeText={setRaca}
+        />
+        <TextInput
+          placeholder="Nome do dono"
+          placeholderTextColor={COLORS.textMuted}
+          style={inputStyle}
+          value={dono}
+          onChangeText={setDono}
+        />
+        <TextInput
+          placeholder="Telefone (WhatsApp)"
+          placeholderTextColor={COLORS.textMuted}
+          keyboardType="phone-pad"
+          style={inputStyle}
+          value={telefone}
+          onChangeText={setTelefone}
+        />
+      </AddItemModal>
     </View>
   );
 }

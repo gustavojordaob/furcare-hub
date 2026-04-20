@@ -1,6 +1,7 @@
-import { useMemo } from "react";
-import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { useMemo, useState } from "react";
+import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import tw from "twrnc";
+import { AddItemModal } from "../../src/components/AddItemModal";
 import { ScreenHeader } from "../../src/components/ScreenHeader";
 import { useAuth } from "../../src/context/AuthContext";
 import { COLORS } from "../../src/constants/theme";
@@ -16,7 +17,7 @@ type AgRow = {
   telefoneDono: string;
 };
 
-const MOCK: AgRow[] = [
+const INITIAL: AgRow[] = [
   {
     id: "a1",
     pet: "Thor",
@@ -48,6 +49,7 @@ const MOCK: AgRow[] = [
 
 function formatLabel(iso: string) {
   const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
   return d.toLocaleString("pt-BR", {
     weekday: "short",
     hour: "2-digit",
@@ -59,17 +61,27 @@ function formatLabel(iso: string) {
 
 export default function AgendaTab() {
   const { signOutUser } = useAuth();
+  const [rows, setRows] = useState<AgRow[]>(INITIAL);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [pet, setPet] = useState("");
+  const [servico, setServico] = useState("");
+  const [inicio, setInicio] = useState("");
+  const [atendente, setAtendente] = useState("");
+  const [atendenteId, setAtendenteId] = useState("att1");
+  const [telefoneDono, setTelefoneDono] = useState("");
+
+  const inputStyle = tw`rounded-xl px-4 py-3 text-white border border-zinc-700 mb-3`;
 
   const conflitos = useMemo(() => {
     const map = new Map<string, AgRow[]>();
-    for (const row of MOCK) {
+    for (const row of rows) {
       const list = map.get(row.atendenteId) ?? [];
       list.push(row);
       map.set(row.atendenteId, list);
     }
     const msgs: string[] = [];
-    for (const [, rows] of map) {
-      const sorted = [...rows].sort(
+    for (const [, list] of map) {
+      const sorted = [...list].sort(
         (a, b) => new Date(a.inicio).getTime() - new Date(b.inicio).getTime()
       );
       for (let i = 1; i < sorted.length; i++) {
@@ -85,13 +97,53 @@ export default function AgendaTab() {
       }
     }
     return msgs;
-  }, []);
+  }, [rows]);
+
+  function resetForm() {
+    setPet("");
+    setServico("");
+    setInicio("");
+    setAtendente("");
+    setAtendenteId("att1");
+    setTelefoneDono("");
+  }
+
+  function onSalvar() {
+    if (!pet.trim() || !servico.trim() || !inicio.trim() || !atendente.trim()) {
+      return;
+    }
+    let iso = inicio.trim();
+    const parsed = new Date(iso);
+    if (Number.isNaN(parsed.getTime())) {
+      iso = new Date().toISOString();
+    }
+    const tel = telefoneDono.replace(/\D/g, "");
+    setRows((prev) => [
+      {
+        id: `a-${Date.now()}`,
+        pet: pet.trim(),
+        servico: servico.trim(),
+        inicio: iso,
+        atendenteId: atendenteId.trim() || "att1",
+        atendente: atendente.trim(),
+        telefoneDono: tel || "5511999990000",
+      },
+      ...prev,
+    ]);
+    resetForm();
+    setModalOpen(false);
+  }
+
+  const canSave =
+    pet.trim() && servico.trim() && inicio.trim() && atendente.trim();
 
   return (
-    <View style={tw`flex-1`}>
+    <View style={[tw`flex-1`, { backgroundColor: COLORS.background }]}>
       <ScreenHeader
         title="Agenda"
         subtitle="Banho e tosa — sem sobreposição por atendente"
+        onAdd={() => setModalOpen(true)}
+        addAccessibilityLabel="Novo agendamento"
         onLogout={signOutUser}
       />
       <ScrollView contentContainerStyle={tw`px-4 pb-10`}>
@@ -99,7 +151,11 @@ export default function AgendaTab() {
           <View
             style={[
               tw`rounded-2xl p-4 mb-4`,
-              { borderWidth: 1, borderColor: COLORS.warning, backgroundColor: "#2a1f0f" },
+              {
+                borderWidth: 1,
+                borderColor: COLORS.warning,
+                backgroundColor: "#2a1f0f",
+              },
             ]}
           >
             <Text style={{ color: COLORS.warning }}>Atenção</Text>
@@ -111,12 +167,16 @@ export default function AgendaTab() {
           </View>
         ) : null}
 
-        {MOCK.map((row) => (
+        {rows.map((row) => (
           <View
             key={row.id}
             style={[
               tw`rounded-2xl p-4 mb-3`,
-              { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border },
+              {
+                backgroundColor: COLORS.surface,
+                borderWidth: 1,
+                borderColor: COLORS.border,
+              },
             ]}
           >
             <Text style={tw`text-white font-semibold`}>{row.pet}</Text>
@@ -157,6 +217,61 @@ export default function AgendaTab() {
           </View>
         ))}
       </ScrollView>
+
+      <AddItemModal
+        visible={modalOpen}
+        title="Novo agendamento"
+        onClose={() => {
+          resetForm();
+          setModalOpen(false);
+        }}
+        onSubmit={onSalvar}
+        submitDisabled={!canSave}
+      >
+        <TextInput
+          placeholder="Pet"
+          placeholderTextColor={COLORS.textMuted}
+          style={inputStyle}
+          value={pet}
+          onChangeText={setPet}
+        />
+        <TextInput
+          placeholder="Serviço (ex.: Banho + tosa)"
+          placeholderTextColor={COLORS.textMuted}
+          style={inputStyle}
+          value={servico}
+          onChangeText={setServico}
+        />
+        <TextInput
+          placeholder="Início (ISO ou data/hora)"
+          placeholderTextColor={COLORS.textMuted}
+          style={inputStyle}
+          value={inicio}
+          onChangeText={setInicio}
+        />
+        <TextInput
+          placeholder="Atendente"
+          placeholderTextColor={COLORS.textMuted}
+          style={inputStyle}
+          value={atendente}
+          onChangeText={setAtendente}
+        />
+        <TextInput
+          placeholder="ID atendente (ex.: att1, att2) — conflitos"
+          placeholderTextColor={COLORS.textMuted}
+          style={inputStyle}
+          value={atendenteId}
+          onChangeText={setAtendenteId}
+        />
+        <TextInput
+          placeholder="Telefone do dono (só números, DDI)"
+          placeholderTextColor={COLORS.textMuted}
+          keyboardType="phone-pad"
+          style={inputStyle}
+          value={telefoneDono}
+          onChangeText={setTelefoneDono}
+        />
+      </AddItemModal>
     </View>
   );
 }

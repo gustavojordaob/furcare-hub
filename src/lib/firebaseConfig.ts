@@ -1,7 +1,14 @@
-import { initializeApp, getApps, FirebaseApp } from "firebase/app";
-import { getAuth, Auth } from "firebase/auth";
+import { FirebaseError, FirebaseApp, initializeApp, getApps } from "firebase/app";
+import {
+  Auth,
+  getAuth,
+  initializeAuth,
+  getReactNativePersistence,
+} from "firebase/auth";
 import { getFirestore, Firestore } from "firebase/firestore";
 import Constants from "expo-constants";
+import { Platform } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const extra = Constants.expoConfig?.extra as
   | {
@@ -38,6 +45,34 @@ const firebaseConfig = {
     "1:000000000000:web:0000000000000000000000",
 };
 
+if (__DEV__) {
+  const key = firebaseConfig.apiKey ?? "";
+  console.log("[Firebase] config check:", {
+    projectId: firebaseConfig.projectId,
+    authDomain: firebaseConfig.authDomain,
+    apiKeyPrefix: key.length > 12 ? `${key.slice(0, 10)}…` : key || "(vazio)",
+    looksLikePlaceholder: key === "YOUR_API_KEY" || !key,
+  });
+}
+
+function createAuth(app: FirebaseApp): Auth {
+  if (Platform.OS === "web") {
+    return getAuth(app);
+  }
+  try {
+    return initializeAuth(app, {
+      persistence: getReactNativePersistence(AsyncStorage),
+    });
+  } catch (e: unknown) {
+    const code =
+      e instanceof FirebaseError ? e.code : (e as { code?: string })?.code;
+    if (code === "auth/already-initialized") {
+      return getAuth(app);
+    }
+    throw e;
+  }
+}
+
 let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
@@ -53,7 +88,7 @@ export function getFirebaseApp(): FirebaseApp {
 
 export function getFirebaseAuth(): Auth {
   if (!auth) {
-    auth = getAuth(getFirebaseApp());
+    auth = createAuth(getFirebaseApp());
   }
   return auth;
 }
@@ -63,4 +98,30 @@ export function getFirestoreDb(): Firestore {
     db = getFirestore(getFirebaseApp());
   }
   return db;
+}
+
+/** Loga o erro completo do Firebase Auth (Metro / Logcat / Safari Web Inspector). */
+export function logFirebaseAuthError(context: string, error: unknown): void {
+  const payload: Record<string, unknown> = { context };
+
+  if (error instanceof FirebaseError) {
+    payload.code = error.code;
+    payload.message = error.message;
+    payload.name = error.name;
+    const custom = error.customData as Record<string, unknown> | undefined;
+    if (custom && Object.keys(custom).length) {
+      payload.customData = custom;
+    }
+  } else if (error instanceof Error) {
+    payload.name = error.name;
+    payload.message = error.message;
+    payload.stack = error.stack;
+  } else {
+    payload.raw = error;
+  }
+
+  console.error("[Firebase Auth]", JSON.stringify(payload, null, 2));
+  if (error && typeof error === "object") {
+    console.error("[Firebase Auth] error object:", error);
+  }
 }
