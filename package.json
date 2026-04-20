@@ -7,7 +7,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "deploy:firestore": "npx firebase-tools deploy --only firestore --project furcare-hub"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
