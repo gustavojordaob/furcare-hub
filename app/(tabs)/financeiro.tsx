@@ -59,7 +59,7 @@ export default function FinanceiroTab() {
     Number.parseFloat(valorStr.replace(",", ".")) > 0;
 
   return (
-    <View style={tw`flex-1`}>
+    <View style={[tw`flex-1`, { backgroundColor: COLORS.background }]}>
       <ScreenHeader
         title="Financeiro"
         subtitle={`Resumo mensal · ${MES_REF}`}

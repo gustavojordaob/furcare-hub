@@ -64,7 +64,7 @@ export default function EstoqueTab() {
     !Number.isNaN(Number.parseInt(minStr, 10));
 
   return (
-    <View style={tw`flex-1`}>
+    <View style={[tw`flex-1`, { backgroundColor: COLORS.background }]}>
       <ScreenHeader
         title="Estoque"
         subtitle="Alerta quando abaixo do mínimo"

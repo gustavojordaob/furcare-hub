@@ -10,7 +10,12 @@ export default function TabsLayout() {
 
   if (loading) {
     return (
-      <View style={tw`flex-1 items-center justify-center`}>
+      <View
+        style={[
+          tw`flex-1 items-center justify-center`,
+          { backgroundColor: COLORS.background },
+        ]}
+      >
         <ActivityIndicator color={COLORS.primary} size="large" />
       </View>
     );
@@ -24,6 +29,7 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        sceneStyle: { backgroundColor: COLORS.background },
         tabBarStyle: {
           backgroundColor: COLORS.surface,
           borderTopColor: COLORS.border,

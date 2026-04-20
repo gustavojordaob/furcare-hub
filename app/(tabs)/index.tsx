@@ -75,7 +75,7 @@ export default function HomeTab() {
   const canSave = pet.trim().length > 0 && quando.trim().length > 0;
 
   return (
-    <View style={tw`flex-1`}>
+    <View style={[tw`flex-1`, { backgroundColor: COLORS.background }]}>
       <ScreenHeader
         title="Início"
         subtitle={user?.email ?? "Dashboard"}

@@ -138,7 +138,7 @@ export default function AgendaTab() {
     pet.trim() && servico.trim() && inicio.trim() && atendente.trim();
 
   return (
-    <View style={tw`flex-1`}>
+    <View style={[tw`flex-1`, { backgroundColor: COLORS.background }]}>
       <ScreenHeader
         title="Agenda"
         subtitle="Banho e tosa — sem sobreposição por atendente"

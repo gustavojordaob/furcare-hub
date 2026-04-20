@@ -72,7 +72,7 @@ export default function PetsTab() {
   }
 
   return (
-    <View style={tw`flex-1`}>
+    <View style={[tw`flex-1`, { backgroundColor: COLORS.background }]}>
       <ScreenHeader
         title="Pets"
         subtitle="Cada pet possui um dono cadastrado"

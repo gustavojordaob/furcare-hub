@@ -59,7 +59,7 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={tw`flex-1`}
+      style={[tw`flex-1`, { backgroundColor: COLORS.background }]}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
